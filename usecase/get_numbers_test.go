@@ -9,6 +9,7 @@ import (
 )
 
 func TestGetNumbersFunc(t *testing.T) {
+	// given timeframe
 	timeout := 10 * time.Millisecond
 
 	tests := []struct {
@@ -17,17 +18,33 @@ func TestGetNumbersFunc(t *testing.T) {
 		expected []int
 	}{
 		{
+			name: "All URLs were successfully retrieved within the given timeframe",
+			handlers: []http.HandlerFunc{
+				func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(`{"numbers": [1,2,3]}`))
+				},
+				func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(`{"numbers": [5,4,3]}`))
+				},
+			},
+			expected: []int{1, 2, 3, 4, 5},
+		},
+		{
 			name: "All URLs that were successfully retrieved within the given timeframe must influence the result",
 			handlers: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte(`{"numbers": [1,2,3]}`))
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(`{"numbers": [3,4,5]}`))
+					time.Sleep(timeout)
+					w.Write([]byte(`{"numbers": [4,5,6]}`))
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					time.Sleep(100 * time.Millisecond) // Delay to simulate timeout
-					w.Write([]byte(`{"numbers": [5,6,7]}`))
+					w.Write([]byte(`{"numbers": [5,4,3]}`))
+				},
+				func(w http.ResponseWriter, r *http.Request) {
+					time.Sleep(timeout)
+					w.Write([]byte(`{"numbers": [7,6,5]}`))
 				},
 			},
 			expected: []int{1, 2, 3, 4, 5},
